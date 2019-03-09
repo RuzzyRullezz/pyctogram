@@ -607,7 +607,7 @@ class InstagramClient:
                 params = dict(max_id=max_id, big_list='true')
             else:
                 params = {}
-            list_response = self.session.post(url, params=params, headers=self.headers).json()
+            list_response = self.session.post(url, params=params, headers=self.headers)
             list_response = self.get_json(list_response)
             yield list_response['users']
             max_id = list_response.get('next_max_id')
