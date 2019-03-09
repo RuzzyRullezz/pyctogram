@@ -586,17 +586,14 @@ class InstagramClient:
         return json_response
 
     def get_followings(self, user_id, max_id=None):
-        timeout = 10  # seconds
         url = urls.FOLLOWING_URL % user_id
         while True:
             if max_id:
                 params = dict(max_id=max_id, big_list='true')
             else:
                 params = {}
-            list_response = self.session.post(url, params=params, headers=self.headers).json()
-            if 'users' not in list_response:
-                time.sleep(timeout)
-                continue
+            list_response = self.session.post(url, params=params, headers=self.headers)
+            list_response = self.get_json(list_response)
             map(lambda u: u.update({'id': u['pk']}), list_response['users'])
             yield list_response['users']
             max_id = list_response.get('next_max_id')
@@ -604,7 +601,6 @@ class InstagramClient:
                 break
 
     def get_followers(self, user_id, max_id=None):
-        timeout = 10  # seconds
         url = urls.FOLLOWERS_URL % user_id
         while True:
             if max_id:
@@ -612,9 +608,7 @@ class InstagramClient:
             else:
                 params = {}
             list_response = self.session.post(url, params=params, headers=self.headers).json()
-            if 'users' not in list_response:
-                time.sleep(timeout)
-                continue
+            list_response = self.get_json(list_response)
             yield list_response['users']
             max_id = list_response.get('next_max_id')
             if max_id is None:
