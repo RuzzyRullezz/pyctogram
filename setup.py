@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 import pyctogram
 
 setup(
-    name='pyctogtam',
+    name='pyctogram',
     version=pyctogram.__version__,
     author='Ruzzy Rullezz',
     author_email='ruslan@lemimi.ru',
