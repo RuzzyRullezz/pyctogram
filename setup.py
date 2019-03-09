@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     package_dir={'pyctogram': 'pyctogram'},
     package_data={
-        'pyctogtam': ['tests/data/*']
+        'pyctogtam': ['pyctogram/tests/data/*']
     },
     install_requires=[
         'requests',
