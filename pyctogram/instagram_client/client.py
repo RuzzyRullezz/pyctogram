@@ -1,24 +1,23 @@
 # coding: utf-8
+import os
 import random
 import hashlib
 import time
 import hmac
 import urllib.parse
 import json
-import os
+import functools
 import collections
 import datetime
-import itertools
-import functools
-import inspect
 
-import pytz
 import requests
 import requests.exceptions
 
 from . import constants
 from . import helpers
 from . import options
+from . import urls
+from . import friendship_actions as actions
 
 from .exceptions import *
 
@@ -95,8 +94,8 @@ class InstagramClient:
             return json_response
 
     def login(self):
-        fetch_url = constants.API_URL + 'si/fetch_headers/?challenge_type=signup&guid=' + self.generate_uuid(split=True)
-        self.session.get(fetch_url, verify=options.SSL_VERIFY)
+        self.session.get(urls.FETCH_URL, verify=options.SSL_VERIFY,
+                         params=dict(challenge_type='signup', guid=self.generate_uuid(split=True)))
         data = json.dumps({
             'device_id': self.device_id,
             'guid': self.uuid,
@@ -105,9 +104,8 @@ class InstagramClient:
             'password': self.password,
             'login_attempt_count': 0
         })
-        login_url = constants.API_URL + 'accounts/login/'
-        response = self.session.post(login_url,
-                                     data=self.generate_signature(data.encode(options.DEFAULT_ENCODING)),
+        response = self.session.post(urls.LOGIN_URL,
+                                     data=self.generate_signature(data),
                                      headers=self.headers,
                                      verify=options.SSL_VERIFY)
         json_response = self.get_json(response)
@@ -124,15 +122,13 @@ class InstagramClient:
         self.get_recent_activity()
 
     def logout(self):
-        response = self.session.get(constants.API_URL + 'accounts/logout/',
-                                    headers=self.headers, verify=options.SSL_VERIFY)
+        response = self.session.get(urls.LOGOUT_URL, headers=self.headers, verify=options.SSL_VERIFY)
         self.get_json(response)
 
     @staticmethod
     def generate_signature(data):
         hmac_key = constants.IG_SIG_KEY.encode(options.DEFAULT_ENCODING)
-        if isinstance(data, str):
-            data = data.encode(options.DEFAULT_ENCODING)
+        data = data.encode(options.DEFAULT_ENCODING)
         digest = hmac.new(hmac_key, msg=data, digestmod=hashlib.sha256).hexdigest()
         return 'ig_sig_key_version=' + constants.SIG_KEY_VERSION + '&signed_body=' + digest + '.' + urllib.parse.quote_plus(data)
 
@@ -144,56 +140,161 @@ class InstagramClient:
             '_csrftoken': self.csrftoken,
             'experiments': constants.EXPERIMENTS
         })
-        return self.session.post(constants.API_URL + 'qe/sync/',
-                                 data=self.generate_signature(data.encode(options.DEFAULT_ENCODING)),
+        return self.session.post(urls.SYNC_URL,
+                                 data=self.generate_signature(data),
                                  headers=self.headers,
                                  verify=options.SSL_VERIFY)
 
     def auto_complete_user_list(self):
-        return self.session.get(constants.API_URL + 'friendships/autocomplete_user_list/',
-                                headers=self.headers, verify=options.SSL_VERIFY)
+        return self.session.get(urls.USER_LIST_URL, headers=self.headers, verify=options.SSL_VERIFY)
 
     def timeline_feed(self):
-        return self.session.get(constants.API_URL + 'feed/timeline/',
-                                headers=self.headers, verify=options.SSL_VERIFY)
+        return self.session.get(urls.TIMELINE_URL, headers=self.headers, verify=options.SSL_VERIFY)
 
     def get_recent_activity(self):
-        response = self.session.get(constants.API_URL + 'news/inbox/?',
-                                    headers=self.headers, verify=options.SSL_VERIFY)
+        response = self.session.get(urls.INBOX_URL, headers=self.headers, verify=options.SSL_VERIFY)
         json_response = self.get_json(response)
         return json_response
 
     def get_user_info(self, user_id):
-        response = self.session.get(constants.API_URL + 'users/%d/info/' % user_id)
+        response = self.session.get(urls.USER_INFO_URL % user_id)
         json_response = self.get_json(response)
         return json_response
 
     def friendships(self, action, user_id):
-        assert action in ['create', 'destroy', 'block', 'unblock']
+        assert action in actions.ACTIONS
         data = json.dumps({
             '_uuid': self.uuid,
             '_uid': self.user_id,
             '_csrftoken': self.csrftoken,
             'user_id': user_id
         })
-        return self.session.post(constants.API_URL + 'friendships/%s/%d/' % (action, user_id),
+        return self.session.post(urls.FRIENDSHIPS_URL % (action, user_id),
                                  data=self.generate_signature(data),
                                  headers=self.headers,
                                  verify=options.SSL_VERIFY)
 
-    def follow(self, user_id, return_json=True):
-        action = 'create'
+    def follow(self, user_id):
+        action = actions.CREATE
         response = self.friendships(action, user_id)
-        if not return_json:
-            return response
         json_response = self.get_json(response)
         return json_response
 
-    def unfollow(self, user_id, return_json=True):
-        action = 'destroy'
+    def unfollow(self, user_id):
+        action = actions.DESTROY
         response = self.friendships(action, user_id)
-        if not return_json:
-            return response
         json_response = self.get_json(response)
         return json_response
 
+    def expose(self):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            'id': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'experiment': 'ig_android_profile_contextual_feed',
+        })
+        return self.session.post(urls.EXPOSE_URL,
+                                 data=self.generate_signature(data),
+                                 headers=self.headers,
+                                 verify=options.SSL_VERIFY)
+
+    @staticmethod
+    def build_body(bodies, boundary):
+        boundary = boundary.encode(options.DEFAULT_ENCODING)
+        body = b''
+        for b in bodies:
+            body += b'--' + boundary + b'\r\n'
+            body += f'Content-Disposition: {b["type"]}; name="{b["name"]}"'.encode(options.DEFAULT_ENCODING)
+            filename = b.get('filename')
+            if filename:
+                _, ext = os.path.splitext(filename)
+                body += f'; filename="pending_media_{str(int(time.time() * 1000))}{ext}"'.encode(options.DEFAULT_ENCODING)
+            headers = b.get('headers')
+            if headers and isinstance(headers, collections.Iterable):
+                for header in headers:
+                    body += b'\r\n' + header.encode(options.DEFAULT_ENCODING)
+            body += b'\r\n\r\n' + b['data'] + b'\r\n'
+        body += b'--' + boundary + b'--'
+        return body
+
+    def upload_photo(self, photo_path, uid=None, caption=''):
+        upload_url = urls.UPLOAD_IMG_URL
+        boundary = self.uuid
+        with open(photo_path, 'rb') as photo_file:
+            photo_binary = photo_file.read()
+        if uid is None:
+            uid = str(int(time.time() * 1000)).encode(options.DEFAULT_ENCODING)
+        bodies = [
+            {'type': 'form-data',
+             'name': 'upload_id',
+             'data': uid},
+            {'type': 'form-data',
+             'name': '_uuid',
+             'data': self.uuid.encode(options.DEFAULT_ENCODING)},
+            {'type': 'form-data',
+             'name': '_csrftoken',
+             'data': self.csrftoken.encode(options.DEFAULT_ENCODING)},
+            {'type': 'form-data',
+             'name': 'image_compression',
+             'data': b'{"lib_name":"jt","lib_version":"1.3.0","quality":"70"}'},
+            {'type': 'form-data',
+             'name': 'photo',
+             'data': photo_binary,
+             'filename': 'pending_media_%s.jpg' % uid,
+             'headers': [
+                 'Content-Transfer-Encoding: binary',
+                 'Content-type: application/octet-stream',
+             ]},
+        ]
+
+        headers = {
+            'Connection': 'close',
+            'Accept': '*/*',
+            'Content-type': 'multipart/form-data; boundary=' + boundary,
+            'Accept-Language': 'en-US',
+            'Accept-Encoding': 'gzip',
+            'Cookie2': '$Version=1',
+            'User-Agent': constants.USER_AGENT,
+        }
+        response = self.session.post(upload_url, data=self.build_body(bodies, boundary), headers=headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        upload_id = json_response['upload_id']
+        self.configure(upload_id, photo_path, caption=caption)
+        self.expose()
+
+    def configure(self, upload_id, photo_path, caption=''):
+        width, height = helpers.get_image_size(photo_path)
+        data = json.dumps({
+            'upload_id': upload_id,
+            'camera_model': 'HM1S',
+            'source_type': 4,
+            'date_time_original': datetime.datetime.now().strftime('%Y:%m:%d %H:%M:%S'),
+            'camera_make': 'XIAOMI',
+            'edits': {
+                'crop_original_size': [width, height],
+                'crop_zoom': 1.0,
+                'crop_center': [0.0, -0.0],
+            },
+            'extra': {
+                'source_width': width,
+                'source_height': height,
+            },
+            'device': {
+                'manufacturer': 'Xiaomi',
+                'model': 'HM 1SW',
+                'android_version': 18,
+                'android_release': '4.3',
+            },
+            '_csrftoken': self.csrftoken,
+            '_uuid': str(self.uuid),
+            '_uid': self.user_id,
+            'caption': caption,
+        })
+        response = self.session.post(urls.IMG_CONFIGURE_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response

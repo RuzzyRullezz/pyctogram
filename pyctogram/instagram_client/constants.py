@@ -1,8 +1,3 @@
-# coding: utf-8
-
-API_URL = 'https://i.instagram.com/api/v1/'
-
-
 EXPERIMENTS = 'ig_creation_growth_holdout,ig_android_place_typeahead_source,' \
               'ig_android_enable_share_to_whatsapp,ig_android_video_look_ahead,' \
               'ig_android_direct_drawing_in_quick_cam_universe,' \
@@ -39,21 +34,5 @@ EXPERIMENTS = 'ig_creation_growth_holdout,ig_android_place_typeahead_source,' \
               'ig_android_default_video_icon,ig_android_direct_video_uploads,' \
               'ig_android_mentions_invite_v2,ig_android_direct_thread_ui_rewrite_qe'
 SIG_KEY_VERSION = '4'
-# USER_AGENT = 'Instagram 7.19.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '9fca90d84e8e0f372a126ba03a22418d0836ef126ed7a538429025e791799e38'
-# USER_AGENT = 'Instagram 8.0.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '9b3b9e55988c954e51477da115c58ae82dcae7ac01c735b4443a3c5923cb593a'
-# USER_AGENT = 'Instagram 8.2.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '55e91155636eaa89ba5ed619eb4645a4daf1103f2161dbfe6fd94d5ea7716095'
-# USER_AGENT = 'Instagram 8.4.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '3d3d669cedc38f2ea7d198840e0648db3738224a0f661aa6a2c1e77dfa964a1e'
-# USER_AGENT = 'Instagram 8.5.2 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '3e0fbc3ab2b2a6b3dbd5f5303dc26cb8d39636291ea9da820283a275d070bd98'
-# USER_AGENT = 'Instagram 9.0.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '5519c493fc0e2d56355621cf0d4485611869067c7e26f89e946070e3c526df7d'
-# USER_AGENT = 'Instagram 9.0.1 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = '96724bcbd4fb3e608074e185f2d4f119156fcca061692a4a1db1c7bf142d3e22'
-# USER_AGENT = 'Instagram 9.1.5 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
-# IG_SIG_KEY = 'af0431ace409e957498c6050e2299baa829014a781905eef3fc94139151e5d38'
 USER_AGENT = 'Instagram 9.2.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)'
 IG_SIG_KEY = '012a54f51c49aa8c5c322416ab1410909add32c966bbaa0fe3dc58ac43fd7ede'
