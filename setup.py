@@ -13,5 +13,6 @@ setup(
         'requests',
         'pytz',
         'pillow',
+        'av',
     ],
 )

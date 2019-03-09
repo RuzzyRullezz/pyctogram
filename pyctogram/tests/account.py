@@ -1,5 +1,5 @@
 import os
 import getpass
 
-username = os.environ.get('INSTA_TEST_NAME', input("Enter username:"))
-password = os.environ.get('INSTA_TEST_PASS', getpass.getpass("Enter password:"))
+username = os.environ.get('INSTA_TEST_NAME') or input("Enter username:")
+password = os.environ.get('INSTA_TEST_PASS') or getpass.getpass("Enter password:")

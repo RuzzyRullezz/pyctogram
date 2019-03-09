@@ -14,7 +14,7 @@ import requests
 import requests.exceptions
 
 from . import constants
-from . import helpers
+from . import utils
 from . import options
 from . import urls
 from . import friendship_actions as actions
@@ -156,36 +156,6 @@ class InstagramClient:
         json_response = self.get_json(response)
         return json_response
 
-    def get_user_info(self, user_id):
-        response = self.session.get(urls.USER_INFO_URL % user_id)
-        json_response = self.get_json(response)
-        return json_response
-
-    def friendships(self, action, user_id):
-        assert action in actions.ACTIONS
-        data = json.dumps({
-            '_uuid': self.uuid,
-            '_uid': self.user_id,
-            '_csrftoken': self.csrftoken,
-            'user_id': user_id
-        })
-        return self.session.post(urls.FRIENDSHIPS_URL % (action, user_id),
-                                 data=self.generate_signature(data),
-                                 headers=self.headers,
-                                 verify=options.SSL_VERIFY)
-
-    def follow(self, user_id):
-        action = actions.CREATE
-        response = self.friendships(action, user_id)
-        json_response = self.get_json(response)
-        return json_response
-
-    def unfollow(self, user_id):
-        action = actions.DESTROY
-        response = self.friendships(action, user_id)
-        json_response = self.get_json(response)
-        return json_response
-
     def expose(self):
         data = json.dumps({
             '_uuid': self.uuid,
@@ -214,7 +184,8 @@ class InstagramClient:
             if headers and isinstance(headers, collections.Iterable):
                 for header in headers:
                     body += b'\r\n' + header.encode(options.DEFAULT_ENCODING)
-            body += b'\r\n\r\n' + b['data'] + b'\r\n'
+            encoded_data = b['data'] if isinstance(b['data'], bytes) else b['data'].encode(options.DEFAULT_ENCODING)
+            body += b'\r\n\r\n' + encoded_data + b'\r\n'
         body += b'--' + boundary + b'--'
         return body
 
@@ -224,20 +195,20 @@ class InstagramClient:
         with open(photo_path, 'rb') as photo_file:
             photo_binary = photo_file.read()
         if uid is None:
-            uid = str(int(time.time() * 1000)).encode(options.DEFAULT_ENCODING)
+            uid = str(int(time.time() * 1000))
         bodies = [
             {'type': 'form-data',
              'name': 'upload_id',
              'data': uid},
             {'type': 'form-data',
              'name': '_uuid',
-             'data': self.uuid.encode(options.DEFAULT_ENCODING)},
+             'data': self.uuid},
             {'type': 'form-data',
              'name': '_csrftoken',
-             'data': self.csrftoken.encode(options.DEFAULT_ENCODING)},
+             'data': self.csrftoken},
             {'type': 'form-data',
              'name': 'image_compression',
-             'data': b'{"lib_name":"jt","lib_version":"1.3.0","quality":"70"}'},
+             'data': '{"lib_name":"jt","lib_version":"1.3.0","quality":"70"}'},
             {'type': 'form-data',
              'name': 'photo',
              'data': photo_binary,
@@ -265,7 +236,7 @@ class InstagramClient:
         self.expose()
 
     def configure(self, upload_id, photo_path, caption=''):
-        width, height = helpers.get_image_size(photo_path)
+        width, height = utils.picture.get_image_size(photo_path)
         data = json.dumps({
             'upload_id': upload_id,
             'camera_model': 'HM1S',
@@ -292,9 +263,143 @@ class InstagramClient:
             '_uid': self.user_id,
             'caption': caption,
         })
-        response = self.session.post(urls.IMG_CONFIGURE_URL,
+        response = self.session.post(urls.CONF_URL,
                                      data=self.generate_signature(data),
                                      headers=self.headers,
                                      verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+    def upload_video(self, video_path, caption='', debug=False):
+        video_path = utils.video.prepare_video(video_path, debug=debug)
+        boundary = self.uuid
+        with open(video_path, 'rb') as photo_file:
+            video_binary = photo_file.read()
+        uid = str(int(time.time() * 1000))
+        bodies = [
+            {'type': 'form-data',
+             'name': 'upload_id',
+             'data': uid},
+            {'type': 'form-data',
+             'name': '_uuid',
+             'data': self.uuid},
+            {'type': 'form-data',
+             'name': '_csrftoken',
+             'data': self.csrftoken},
+            {'type': 'form-data',
+             'name': 'media_type',
+             'data': '2'},
+        ]
+        headers = {
+            'Connection': 'keep-alive',
+            'Accept': '*/*',
+            'Content-type': 'multipart/form-data; boundary=' + boundary,
+            'Accept-Language': 'en-US',
+            'User-Agent': constants.USER_AGENT,
+        }
+        response = self.session.post(urls.UPLOAD_VIDEO_URL, data=self.build_body(bodies, boundary),
+                                     headers=headers, verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        video_upload_urls = json_response['video_upload_urls']
+        upload_url = json_response['video_upload_urls'][3]['url']
+        job = video_upload_urls[3]['job']
+        chunk_count = 4
+        parts = list(utils.video.split_by_parts(video_binary, chunk_count))
+        for i in range(chunk_count):
+            start_index, end_index, binary = parts[i]
+            headers = {
+                'Connection': 'keep-alive',
+                'Accept': '*/*',
+                'Cookie2': '$Version=1',
+                'Content-type': 'application/octet-stream',
+                'Session-ID': uid,
+                'Accept-Language': 'en-US',
+                'Content-Disposition': 'attachment; filename = "video.mov"',
+                'Content-Length': str(end_index - start_index),
+                'Content-Range': 'bytes %d-%d/%d' % (start_index, end_index - 1, len(video_binary)),
+                'User-Agent': constants.USER_AGENT,
+                'job': job
+            }
+            response = self.session.post(upload_url, data=binary,
+                                         headers=headers, verify=options.SSL_VERIFY)
+            if response.status_code not in (200, 201, 202):
+                raise InstagramNot2XX(response.content, response.status_code)
+        time.sleep(10)
+        self.configure_video(uid, video_path, caption=caption)
+        self.expose()
+
+    def configure_video(self, uid, video_path, caption=''):
+        url = urls.CONF_URL
+        preview = utils.video.video_preview(video_path)
+        self.upload_photo(preview, uid=uid, caption=caption)
+        os.unlink(preview)
+        duration, (width, heght) = utils.video.get_video_info(video_path)
+        data = json.dumps(collections.OrderedDict((
+            ('upload_id', int(uid)),
+            ('source_type', '3'),
+            ('poster_frame_index', 0),
+            ('length', 0),
+            ('audio_muted', 'false'),
+            ('filter_type', '0'),
+            ('video_result', 'deprecated'),
+            ('clips', collections.OrderedDict((
+                ('length', duration),
+                ('source_type', '3'),
+                ('camera_position', 'back'),
+            ))),
+            ('extra', collections.OrderedDict((
+                ('source_width', width),
+                ('source_height', heght),
+            ))),
+            ('device', collections.OrderedDict((
+                ('manufacturer', 'Xiaomi'),
+                ('model', 'HM 1SW'),
+                ('android_version', 18),
+                ('android_release', '4.3'),
+            ))),
+            ('_csrftoken', self.csrftoken),
+            ('_uuid', str(self.uuid)),
+            ('_uid', int(self.user_id)),
+            ('caption', caption),
+        )))
+        headers = {
+            'Connection': 'close',
+            'Accept': '*/*',
+            'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept-Language': 'en-US',
+            'Cookie2': '$Version=1',
+            'User-Agent': constants.USER_AGENT,
+        }
+        data = data.replace('"length": 0', '"length": 0.00')
+        response = self.session.post(url, params=dict(video='1'), data=self.generate_signature(data), headers=headers)
+        return self.get_json(response)
+
+    def get_user_info(self, user_id):
+        response = self.session.get(urls.USER_INFO_URL % user_id)
+        json_response = self.get_json(response)
+        return json_response
+
+    def friendships(self, action, user_id):
+        assert action in actions.ACTIONS
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'user_id': user_id
+        })
+        return self.session.post(urls.FRIENDSHIPS_URL % (action, user_id),
+                                 data=self.generate_signature(data),
+                                 headers=self.headers,
+                                 verify=options.SSL_VERIFY)
+
+    def follow(self, user_id):
+        action = actions.CREATE
+        response = self.friendships(action, user_id)
+        json_response = self.get_json(response)
+        return json_response
+
+    def unfollow(self, user_id):
+        action = actions.DESTROY
+        response = self.friendships(action, user_id)
         json_response = self.get_json(response)
         return json_response

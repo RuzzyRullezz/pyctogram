@@ -25,3 +25,6 @@ class InstagramNotJson(InstagramException):
 class InstagramFailer(InstagramException):
     pass
 
+
+class VideoTooShort(RuntimeError):
+    pass

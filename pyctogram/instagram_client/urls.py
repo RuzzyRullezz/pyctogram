@@ -10,5 +10,5 @@ USER_INFO_URL = f'{API_URL}/users/%d/info/'
 FRIENDSHIPS_URL = f'{API_URL}/friendships/%s/%d/'
 UPLOAD_IMG_URL = f'{API_URL}/upload/photo/'
 EXPOSE_URL = f'{API_URL}/qe/expose/'
-IMG_CONFIGURE_URL = f'{API_URL}/media/configure/'
-
+CONF_URL = f'{API_URL}/media/configure/'
+UPLOAD_VIDEO_URL = f'{API_URL}/upload/video/'
