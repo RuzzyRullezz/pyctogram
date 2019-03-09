@@ -530,12 +530,6 @@ class InstagramClient:
         json_response = self.get_json(response)
         return json_response
 
-
-    def get_user_info(self, user_id):
-        response = self.session.get(urls.USER_INFO_URL % user_id)
-        json_response = self.get_json(response)
-        return json_response
-
     def friendships(self, action, user_id):
         assert action in actions.ACTIONS
         data = json.dumps({
@@ -558,6 +552,36 @@ class InstagramClient:
     def unfollow(self, user_id):
         action = actions.DESTROY
         response = self.friendships(action, user_id)
+        json_response = self.get_json(response)
+        return json_response
+
+    def like(self, media_id):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'media_id': media_id
+        })
+
+        response = self.session.post(urls.LIKE_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+    def comment(self, media_id, text):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'comment_text': text
+        })
+
+        response = self.session.post(urls.COMMENT_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
         json_response = self.get_json(response)
         return json_response
 
@@ -593,5 +617,100 @@ class InstagramClient:
                 continue
             yield list_response['users']
             max_id = list_response.get('next_max_id')
+            if max_id is None:
+                break
+
+    def get_user_info(self, user_id):
+        response = self.session.get(urls.USER_INFO_URL % user_id)
+        json_response = self.get_json(response)
+        return json_response
+
+    def get_user_friendship(self, user_id):
+        response = self.session.get(urls.FRIENDSHIPS_INFO_URL % user_id, headers=self.headers)
+        json_response = self.get_json(response)
+        return json_response
+
+    def get_geo_media(self, user_id, fails=0):
+        falls_cnt = 10
+        try:
+            response = self.session.get(urls.MAPS_URL % user_id,
+                                        headers=self.headers,
+                                        verify=options.SSL_VERIFY)
+            json_response = self.get_json(response)
+        except BaseException:
+            if fails >= falls_cnt:
+                raise
+            time.sleep(1)
+            return self.get_geo_media(user_id, fails=fails+1)
+        return json_response
+
+    def get_user_feed(self, user_id):
+        max_id = None
+        c = 0
+        url = urls.FEED_URL % user_id
+        params = dict(rank_token=self.rank_token, ranked_content='true')
+        while True:
+            if max_id:
+                params.update(dict(max_id=max_id))
+            while True:
+                try:
+                    response = self.session.get(
+                        url,
+                        params=params,
+                        headers=self.headers,
+                        verify=options.SSL_VERIFY
+                    )
+                except requests.exceptions.ConnectionError:
+                    continue
+                else:
+                    break
+            json_response = self.get_json(response)
+            c += len(json_response['items'])
+            for item in json_response['items']:
+                yield item
+            max_id = json_response.get('next_max_id')
+            if max_id is None:
+                break
+
+    def get_last_media_id(self, user_id):
+        while True:
+            try:
+                try:
+                    last_feed = next(self.get_user_feed(user_id))
+                except StopIteration:
+                    return None
+                else:
+                    return last_feed
+            except InstagramNot2XX:
+                pass
+
+    def media_info(self, media_id):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'media_id': media_id
+        })
+        response = self.session.post(urls.MEDIA_INFO_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+    def get_media_comments(self, media_id):
+        max_id = None
+        c = 0
+        url = urls.MEDIA_INFO_URL % media_id
+        while True:
+            if max_id:
+                params = dict(max_id=max_id)
+            else:
+                params = {}
+            response = self.session.post(url, params=params, headers=self.headers, verify=options.SSL_VERIFY)
+            json_response = self.get_json(response)
+            c += len(json_response['comments'])
+            yield json_response['comments']
+            max_id = json_response.get('next_max_id')
             if max_id is None:
                 break
