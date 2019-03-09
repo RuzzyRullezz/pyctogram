@@ -1,4 +1,5 @@
 # coding: utf-8
+import inspect
 import os
 import random
 import hashlib
@@ -374,6 +375,162 @@ class InstagramClient:
         response = self.session.post(url, params=dict(video='1'), data=self.generate_signature(data), headers=headers)
         return self.get_json(response)
 
+    def delete_media(self, media_id):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'media_id': media_id,
+        })
+        response = self.session.post(urls.DELETE_MEDIA_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        return self.get_json(response)
+
+    def direct_share(self, media_id, recipients, text=''):
+        if not isinstance(recipients, collections.Iterable):
+            recipients = [recipients]
+        recipient_users = ','.join(map(lambda r: f'"{r}"', recipients))
+        boundary = self.uuid
+        bodies = [
+            {'type': 'form-data',
+             'name': 'media_id',
+             'data': media_id},
+            {'type': 'form-data',
+             'name': 'recipient_users',
+             'data': '[[%s]]' % recipient_users},
+            {'type': 'form-data',
+             'name': 'client_context',
+             'data': self.uuid},
+            {'type': 'form-data',
+             'name': 'thread_ids',
+             'data': '["0"]'},
+            {'type': 'form-data',
+             'name': 'text',
+             'data': text.encode('utf-8')},
+        ]
+        data = self.build_body(bodies, boundary)
+        headers = {
+            'Proxy-Connection': 'keep-alive',
+            'Connection': 'keep-alive',
+            'Accept': '*/*',
+            'Content-type': 'multipart/form-data; boundary=' + boundary,
+            'Accept-Language': 'en-US',
+            'User-Agent': constants.USER_AGENT,
+        }
+        response = self.session.post(urls.DIRECT_SHARE_URL,
+                                     params=dict(media_type='photo'),
+                                     data=data,
+                                     headers=headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+    def direct_message(self, recipients, text):
+        if not isinstance(recipients, collections.Iterable):
+            recipients = [recipients]
+        recipient_users = ','.join(map(lambda r: '"%s"' % r, recipients))
+        boundary = self.uuid
+        bodies = [
+            {'type': 'form-data',
+             'name': 'recipient_users',
+             'data': '[[%s]]' % recipient_users},
+            {'type': 'form-data',
+             'name': 'client_context',
+             'data': self.uuid},
+            {'type': 'form-data',
+             'name': 'thread_ids',
+             'data': '["0"]'},
+            {'type': 'form-data',
+             'name': 'text',
+             'data': text.encode('utf-8')},
+        ]
+        data = self.build_body(bodies, boundary)
+        headers = {
+            'Proxy-Connection': 'keep-alive',
+            'Connection': 'keep-alive',
+            'Accept': '*/*',
+            'Content-type': 'multipart/form-data; boundary=' + boundary,
+            'Accept-Language': 'en-US',
+            'User-Agent': constants.USER_AGENT,
+        }
+        response = self.session.post(urls.DIRECT_MSG_URL,
+                                     data=data,
+                                     headers=headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+    def change_profile_picture(self, photo_path):
+        with open(photo_path, 'rb') as photo_file:
+            photo_binary = photo_file.read()
+        boundary = self.uuid
+        udata = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+        })
+        bodies = [
+            {'type': 'form-data',
+             'name': 'ig_sig_key_version',
+             'data': constants.SIG_KEY_VERSION},
+            {'type': 'form-data',
+             'name': 'signed_body',
+             'data': hmac.new(constants.IG_SIG_KEY, msg=udata, digestmod=hashlib.sha256).hexdigest() + udata},
+            {'type': 'form-data',
+             'name': 'profile_pic',
+             'data': photo_binary,
+             'filename': 'profile_pic.jpeg',
+             'headers': [
+                 'Content-Transfer-Encoding: binary',
+                 'Content-type: application/octet-stream',
+             ]},
+            ]
+        headers = {
+            'Proxy-Connection': 'keep-alive',
+            'Connection': 'keep-alive',
+            'Accept': '*/*',
+            'Content-type': 'multipart/form-data; boundary=' + boundary,
+            'Accept-Language': 'en-US',
+            'Accept-Encoding': 'gzip',
+            'Cookie2': '$Version=1',
+            'User-Agent': constants.USER_AGENT,
+        }
+        data = self.build_body(bodies, boundary)
+        response = self.session.post(urls.CHANGE_PROF_PHOTO_URL,
+                                     data=data,
+                                     headers=headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+    def edit_profile(self, username=None, email=None, full_name=None,
+                     biography=None, external_url=None, phone_number=None, gender=None):
+        request = {
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+        }
+        args, _, _, defaults = inspect.getargspec(self.edit_profile)
+        if defaults:
+            params = args[-len(defaults):]
+        else:
+            params = []
+        for param in params:
+            value = locals()[param]
+            if value is not None:
+                request.update({param: value})
+
+        data = json.dumps(request)
+        response = self.session.post(urls.EDIT_PROF_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
+
+
     def get_user_info(self, user_id):
         response = self.session.get(urls.USER_INFO_URL % user_id)
         json_response = self.get_json(response)
@@ -403,3 +560,38 @@ class InstagramClient:
         response = self.friendships(action, user_id)
         json_response = self.get_json(response)
         return json_response
+
+    def get_followings(self, user_id, max_id=None):
+        timeout = 10  # seconds
+        url = urls.FOLLOWING_URL % user_id
+        while True:
+            if max_id:
+                params = dict(max_id=max_id, big_list='true')
+            else:
+                params = {}
+            list_response = self.session.post(url, params=params, headers=self.headers).json()
+            if 'users' not in list_response:
+                time.sleep(timeout)
+                continue
+            map(lambda u: u.update({'id': u['pk']}), list_response['users'])
+            yield list_response['users']
+            max_id = list_response.get('next_max_id')
+            if max_id is None:
+                break
+
+    def get_followers(self, user_id, max_id=None):
+        timeout = 10  # seconds
+        url = urls.FOLLOWERS_URL % user_id
+        while True:
+            if max_id:
+                params = dict(max_id=max_id, big_list='true')
+            else:
+                params = {}
+            list_response = self.session.post(url, params=params, headers=self.headers).json()
+            if 'users' not in list_response:
+                time.sleep(timeout)
+                continue
+            yield list_response['users']
+            max_id = list_response.get('next_max_id')
+            if max_id is None:
+                break
