@@ -328,8 +328,9 @@ class InstagramClient:
             if response.status_code not in (200, 201, 202):
                 raise InstagramNot2XX(response.content, response.status_code)
         time.sleep(10)
-        self.configure_video(uid, video_path, caption=caption)
+        configure_response = self.configure_video(uid, video_path, caption=caption)
         self.expose()
+        return configure_response
 
     def configure_video(self, uid, video_path, caption=''):
         url = urls.CONF_URL
