@@ -165,10 +165,11 @@ class InstagramClient:
             '_csrftoken': self.csrftoken,
             'experiment': 'ig_android_profile_contextual_feed',
         })
-        return self.session.post(urls.EXPOSE_URL,
-                                 data=self.generate_signature(data),
-                                 headers=self.headers,
-                                 verify=options.SSL_VERIFY)
+        response = self.session.post(urls.EXPOSE_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        return self.get_json(response)
 
     @staticmethod
     def build_body(bodies, boundary):
@@ -233,8 +234,9 @@ class InstagramClient:
                                      verify=options.SSL_VERIFY)
         json_response = self.get_json(response)
         upload_id = json_response['upload_id']
-        self.configure(upload_id, photo_path, caption=caption)
+        configure_response = self.configure(upload_id, photo_path, caption=caption)
         self.expose()
+        return configure_response
 
     def configure(self, upload_id, photo_path, caption=''):
         width, height = utils.picture.get_image_size(photo_path)
