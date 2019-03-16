@@ -5,10 +5,12 @@ import requests
 
 from .exceptions import *
 
+TIMEOUT = 60
+
 
 def get_instagram_id(username):
     url = f'https://www.instagram.com/web/search/topsearch/?query={username}'
-    data = requests.get(url, timeout=60)
+    data = requests.get(url, timeout=TIMEOUT)
     users = map(lambda r: r['user'], json.loads(data.content)['users'])
     users = list(filter(lambda u: u['username'] == username, users))
     if len(users) == 0:
@@ -20,10 +22,11 @@ def get_instagram_id(username):
     return int(user['pk'])
 
 
-def get_user_info(username):
+def get_user_info(username, session=None, proxy=None):
     info_url = 'https://www.instagram.com/%s/'
-    session = requests.Session()
-    response = session.get(info_url % username)
+    if session is None:
+        session = requests.Session()
+    response = session.get(info_url % username, timeout=TIMEOUT, proxies=proxy)
     if response.status_code != 200:
         raise InstagramNot2XX(response.content, response.status_code)
     if response.content is None:
@@ -64,3 +67,46 @@ def parse_user_info(html_data):
         }
         user_info["last_media"] = last_media
     return user_info
+
+
+def get_logged_session(username, password):
+    headers = {
+        'cookie': 'ig_cb=1; rur=FRC; mid=XI02wQAEAAEnEs0nRXWyCFK8gT69; csrftoken=KEaXQWmABfhbyv0MJr3JYszWHRikBhI6',
+        'origin': 'https://www.instagram.com',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/72.0.3626.121 Safari/537.36',
+        'x-requested-with': 'XMLHttpRequest',
+        'x-csrftoken': 'KEaXQWmABfhbyv0MJr3JYszWHRikBhI6',
+        'x-ig-app-id': '936619743392459',
+        'x-instagram-ajax': '46f49c18c4f1',
+        'content-type': 'application/x-www-form-urlencoded',
+        'accept': '*/*',
+        'referer': 'https://www.instagram.com/accounts/login/',
+        'authority': 'www.instagram.com',
+    }
+
+    data = {
+        'username': username,
+        'password': password,
+        'queryParams': '{}',
+        'optIntoOneTap': 'false'
+    }
+    session = requests.Session()
+    session.headers.update(headers)
+    response = session.post('https://www.instagram.com/accounts/login/ajax/', data=data)
+    if response.status_code != 200:
+        raise InstagramNot2XX(response.text, response.status_code)
+    return session
+
+
+def session_logout(session):
+    token = session.headers['x-csrftoken']
+    data = {
+        'csrfmiddlewaretoken': token
+    }
+    response = session.post('https://www.instagram.com/accounts/logout/',data=data)
+    if response.status_code != 200:
+        raise InstagramNot2XX(response.text, response.status_code)
+
