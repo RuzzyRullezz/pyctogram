@@ -50,6 +50,10 @@ class InstagramClient:
         self.csrftoken = None
 
     @staticmethod
+    def get_fake_client():
+        return InstagramClient('', '')
+
+    @staticmethod
     def generate_uuid(split=False):
         uuid = '%04x%04x-%04x-%04x-%04x-%04x%04x%04x' % (
             random.randint(0, 65535),
@@ -619,8 +623,23 @@ class InstagramClient:
 
     def get_user_info(self, user_id):
         response = self.session.get(urls.USER_INFO_URL % user_id)
-        json_response = self.get_json(response)
-        return json_response
+        json_response = self.get_json(response)["user"]
+        user_info = {
+            "pk": json_response["pk"],
+            "username": json_response["username"],
+            "full_name": json_response["full_name"],
+            "is_private": json_response["is_private"],
+            "profile_pic_url": json_response["profile_pic_url"],
+            "is_verified": json_response["is_verified"],
+            "media_count": json_response["media_count"],
+            "follower_count": json_response["follower_count"],
+            "following_count": json_response["following_count"],
+            "biography": json_response["biography"],
+            "external_url": json_response["external_url"],
+            "profile_pic_url_hd": json_response["hd_profile_pic_versions"][-1]["url"],
+            "last_media": None,
+        }
+        return user_info
 
     def get_user_friendship(self, user_id):
         response = self.session.get(urls.FRIENDSHIPS_INFO_URL % user_id, headers=self.headers)

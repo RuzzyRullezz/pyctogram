@@ -1,8 +1,6 @@
-from pyctogram.instagram_client import client
+from pyctogram.instagram_client import client, web
 from pyctogram.tests import account
 
 if __name__ == '__main__':
-    insta_client = client.InstagramClient(account.username, account.password)
-    insta_client.login()
-    user_info = insta_client.get_user_info(account.user_id)
+    user_info = web.get_user_info('gubernatar')
     print(user_info)

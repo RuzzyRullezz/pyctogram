@@ -17,6 +17,15 @@ class InstagramNot2XX(InstagramException):
     def __repr__(self):
         return str(f'{self.msg} (status = {self.status_code}')
 
+class InstagramWrongJsonStruct(InstagramException):
+    def __init__(self):
+        super().__init__('wrong json structure')
+
+
+class InstagramEmptyBody(InstagramException):
+    def __init__(self):
+        super().__init__('empty body')
+
 
 class InstagramNotJson(InstagramException):
     pass
