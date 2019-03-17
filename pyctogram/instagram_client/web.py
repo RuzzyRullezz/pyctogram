@@ -27,6 +27,8 @@ def get_user_info(username, session=None, proxy=None):
     if session is None:
         session = requests.Session()
     response = session.get(info_url % username, timeout=TIMEOUT, proxies=proxy)
+    if response.status_code == 404:
+        return None
     if response.status_code != 200:
         raise InstagramNot2XX(response.content, response.status_code)
     if response.content is None:

@@ -28,6 +28,9 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
     proxies = proxies or [None]
     workers_count = len(proxies)
 
+    class NoResponseMarker:
+        pass
+
     def clean_queue(q):
         with q.mutex:
             q.queue.clear()
@@ -61,7 +64,10 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
                 while True:
                     attempts += 1
                     try:
-                        output_queue.put(get_user_info(user['username'], proxy=proxy))
+                        info = get_user_info(user['username'], proxy=proxy)
+                        if info is None:
+                            info = NoResponseMarker()
+                        output_queue.put(info)
                     except (requests.exceptions.ChunkedEncodingError, ProxyError, InstagramException):
                         time.sleep(float(attempts) / 2)
                         if attempts >= CONNECTION_MAX_ATTEMPTS:
@@ -90,6 +96,8 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
         user_info = output_queue.get()
         if user_info is None:
             active_threads_cnt -= 1
+        elif isinstance(user_info, NoResponseMarker):
+            continue
         elif isinstance(user_info, BaseException):
             raise user_info
         else:
