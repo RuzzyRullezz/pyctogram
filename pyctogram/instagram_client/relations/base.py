@@ -27,9 +27,15 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
     proxies = proxies or [None]
     workers_count = len(proxies)
 
+    def clean_queue(q):
+        with q.mutex:
+            q.queue.clear()
+            q.all_tasks_done.notify_all()
+            q.unfinished_tasks = 0
+
     def queue_filler():
-        sleep_time = 10  # Seconds
         try:
+            sleep_time = 10  # Seconds
             victim_id = get_instagram_id(victim_username)
             insta_client = InstagramClient(username, password)
             insta_client.login()
@@ -37,6 +43,10 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
                 for user_data in user_pack:
                     input_queue.put(user_data)
                 time.sleep(sleep_time)
+        except BaseException as exc:
+            clean_queue(output_queue)
+            output_queue.put(exc)
+            raise
         finally:
             list(map(lambda ii: input_queue.put(None), range(workers_count)))
 
@@ -58,6 +68,10 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
                     else:
                         break
                 input_queue.task_done()
+        except BaseException as exc:
+            clean_queue(output_queue)
+            output_queue.put(exc)
+            raise
         finally:
             output_queue.put(None)
 
@@ -75,5 +89,7 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
         user_info = output_queue.get()
         if user_info is None:
             active_threads_cnt -= 1
+        elif isinstance(user_info, BaseException):
+            raise user_info
         else:
             yield user_info

@@ -58,7 +58,7 @@ def parse_user_info(html_data):
         "external_url": profile["external_url"],
         "last_media": None,
     }
-    if user_info["media_count"] > 0 and not user_info["is_private"]:
+    if len(profile["edge_owner_to_timeline_media"]["edges"]) > 0:
         last_media_data = profile["edge_owner_to_timeline_media"]["edges"][0]['node']
         last_media = {
             'id': f'{last_media_data["id"]}_{user_info["pk"]}',
