@@ -1,6 +1,7 @@
 import queue
 import threading
 import time
+import urllib3.exceptions
 
 import requests
 
@@ -61,7 +62,7 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
                     attempts += 1
                     try:
                         output_queue.put(get_user_info(user['username'], proxy=proxy))
-                    except (requests.exceptions.ChunkedEncodingError, InstagramException):
+                    except (requests.exceptions.ChunkedEncodingError, urllib3.exceptions.MaxRetryError, InstagramException):
                         time.sleep(float(attempts) / 2)
                         if attempts >= CONNECTION_MAX_ATTEMPTS:
                             raise
