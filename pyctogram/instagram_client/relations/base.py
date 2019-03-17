@@ -68,7 +68,7 @@ def get_users(username, password, victim_username, proxies=None, relation=Action
                         if info is None:
                             info = NoResponseMarker()
                         output_queue.put(info)
-                    except (requests.exceptions.ChunkedEncodingError, ProxyError, InstagramException):
+                    except (requests.exceptions.RequestException, InstagramException):
                         time.sleep(float(attempts) / 2)
                         if attempts >= CONNECTION_MAX_ATTEMPTS:
                             raise
