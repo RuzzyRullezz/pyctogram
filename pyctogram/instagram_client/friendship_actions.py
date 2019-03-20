@@ -1,6 +1,6 @@
 CREATE = 'create'
-DESTROY = 'destroy',
-BLOCK = 'block',
+DESTROY = 'destroy'
+BLOCK = 'block'
 UNBLOCK = 'unblock'
 
 ACTIONS = (
