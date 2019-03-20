@@ -86,11 +86,11 @@ class InstagramClient:
     @staticmethod
     def get_json(response):
         if not 200 <= response.status_code <= 299:
-            raise InstagramNot2XX(response.content, response.status_code)
+            raise InstagramNot2XX(response.text, response.status_code)
         try:
             json_response = response.json()
         except ValueError:
-            raise InstagramNotJson(response.content)
+            raise InstagramNotJson(response.text)
         else:
             if json_response['status'] == 'fail':
                 raise InstagramFailer(json_response['message'])
@@ -330,7 +330,7 @@ class InstagramClient:
             response = self.session.post(upload_url, data=binary,
                                          headers=headers, verify=options.SSL_VERIFY)
             if response.status_code not in (200, 201, 202):
-                raise InstagramNot2XX(response.content, response.status_code)
+                raise InstagramNot2XX(response.text, response.status_code)
         time.sleep(10)
         configure_response = self.configure_video(uid, video_path, caption=caption)
         self.expose()

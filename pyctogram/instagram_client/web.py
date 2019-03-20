@@ -30,7 +30,7 @@ def get_user_info(username, session=None, proxy=None):
     if response.status_code == 404:
         return None
     if response.status_code != 200:
-        raise InstagramNot2XX(response.content, response.status_code)
+        raise InstagramNot2XX(response.text, response.status_code)
     if response.content is None:
         raise InstagramEmptyBody
     return parse_user_info(response.text)
