@@ -19,6 +19,7 @@ from . import utils
 from . import options
 from . import urls
 from . import friendship_actions as actions
+from . import session
 
 from .exceptions import *
 
@@ -37,13 +38,13 @@ def repeat_when_429(*args):
 
 
 class InstagramClient:
-    def __init__(self, username, password, proxies=None):
+    def __init__(self, username, password, proxies=None, log_func=None):
         self.username = username
         self.password = password
         self.uuid = self.generate_uuid()
         self.device_id = self.generate_device_id(hashlib.md5((self.username + self.password).encode(options.DEFAULT_ENCODING)).hexdigest())
         self.headers = self.get_headers()
-        self.session = requests.Session()
+        self.session = session.LoggedSession(log_func=log_func)
         self.session.proxies = proxies or {}
         self.user_id = None
         self.rank_token = None
@@ -99,7 +100,7 @@ class InstagramClient:
             return json_response
 
     def login(self):
-        self.session.get(urls.FETCH_URL, verify=options.SSL_VERIFY,
+        self.session.get(urls.FETCH_URL, verify=options.SSL_VERIFY, headers=self.headers,
                          params=dict(challenge_type='signup', guid=self.generate_uuid(split=True)))
         data = json.dumps({
             'device_id': self.device_id,
