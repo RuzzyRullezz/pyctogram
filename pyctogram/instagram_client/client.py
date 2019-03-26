@@ -731,3 +731,24 @@ class InstagramClient:
             max_id = json_response.get('next_max_id')
             if max_id is None:
                 break
+
+    def tag_user(self, media_id, user_id, position, caption=''):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'usertags': json.dumps({
+                'removed': [],
+                'in': [{
+                    'position': position,
+                    'user_id': user_id,
+                }]
+            }),
+            'caption_text': caption,
+        })
+        response = self.session.post(urls.EDIT_MEDIA_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response
