@@ -9,6 +9,10 @@ class InstagramException(BaseException):
         return self.__repr__()
 
 
+class InstagramNoneResponse(InstagramException):
+    pass
+
+
 class InstagramNot2XX(InstagramException):
     def __init__(self, msg, status_code):
         super().__init__(msg)
@@ -16,6 +20,7 @@ class InstagramNot2XX(InstagramException):
 
     def __repr__(self):
         return str(f'{self.msg} (status = {self.status_code}')
+
 
 class InstagramWrongJsonStruct(InstagramException):
     def __init__(self):

@@ -86,6 +86,8 @@ class InstagramClient:
 
     @staticmethod
     def get_json(response):
+        if response is None:
+            raise InstagramNoneResponse("Response is None")
         if not 200 <= response.status_code <= 299:
             raise InstagramNot2XX(response.text, response.status_code)
         try:
