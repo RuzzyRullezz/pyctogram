@@ -754,3 +754,18 @@ class InstagramClient:
                                      verify=options.SSL_VERIFY)
         json_response = self.get_json(response)
         return json_response
+
+
+    def get_pending_friendships(self, max_id=None):
+        url = urls.PENDING_FRIENDSHIPS_URL
+        while True:
+            if max_id:
+                params = dict(max_id=max_id, big_list='true')
+            else:
+                params = {}
+            list_response = self.session.post(url, params=params, headers=self.headers)
+            list_response = self.get_json(list_response)
+            yield list_response['users']
+            max_id = list_response.get('next_max_id')
+            if max_id is None:
+                break
