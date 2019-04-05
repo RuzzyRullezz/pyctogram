@@ -798,8 +798,6 @@ class InstagramClient:
                     raise InstagramWrongJsonStruct
             else:
                 settings_pages_data = response.json()['data']
-            if len(settings_pages_data) == 0:
-                break
             users_list = settings_pages_data['data']
             cursor = settings_pages_data.get('cursor')
             for user in users_list:
