@@ -3,6 +3,7 @@ import inspect
 import os
 import random
 import hashlib
+import re
 import time
 import hmac
 import urllib.parse
@@ -20,7 +21,7 @@ from . import options
 from . import urls
 from . import friendship_actions as actions
 from . import session
-
+from . import web
 from .exceptions import *
 
 
@@ -595,7 +596,8 @@ class InstagramClient:
         json_response = self.get_json(response)
         return json_response
 
-    def get_followings(self, user_id, max_id=None):
+    def get_followings(self, user_id):
+        max_id = None
         url = urls.FOLLOWING_URL % user_id
         while True:
             if max_id:
@@ -610,8 +612,9 @@ class InstagramClient:
             if max_id is None:
                 break
 
-    def get_followers(self, user_id, max_id=None):
+    def get_followers(self, user_id):
         url = urls.FOLLOWERS_URL % user_id
+        max_id = None
         while True:
             if max_id:
                 params = dict(max_id=max_id, big_list='true')
@@ -768,4 +771,36 @@ class InstagramClient:
             yield list_response['users']
             max_id = list_response.get('next_max_id')
             if max_id is None:
+                break
+
+    def get_outgoing_requests(self, cursor=None):
+        pattern = re.compile(r'<script type="text\/javascript">window\._sharedData = (.*);<\/script>')
+        url = urls.OUTGOING_REQUESTS_URL
+        while True:
+            if cursor:
+                html_parse = False
+                params = {
+                    '__a': 1,
+                    'cursor': cursor,
+                }
+            else:
+                html_parse = True
+                params = {}
+            response = self.session.get(url, params=params)
+            if response.status_code != 200:
+                raise InstagramNot2XX(response.text, response.status_code)
+            if html_parse:
+                found = pattern.findall(response.text)
+                if found:
+                    found = found[0]
+                    settings_pages_data = json.loads(found)['entry_data']['SettingsPages'][0]['data']
+                else:
+                    raise InstagramWrongJsonStruct
+            else:
+                settings_pages_data = response.json()['data']
+            users_list = settings_pages_data['data']
+            cursor = settings_pages_data.get('cursor')
+            for user in users_list:
+                yield web.get_user_info(user['text'])
+            if cursor is None:
                 break
