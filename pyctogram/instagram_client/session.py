@@ -48,13 +48,14 @@ class LoggedSession(requests.Session):
             }
             send_kwargs.update(settings)
             resp = self.send(prep, **send_kwargs)
-            log.request_timestamp = datetime.datetime.now()
+            log.response_timestamp = datetime.datetime.now()
             log.status_code = resp.status_code
             log.response_headers = str(resp.headers)
             log.response_body = resp.content
             return resp
         except:
             log.error = traceback.format_exc()
+            raise
         finally:
             if self.log_func and callable(self.log_func):
                 self.log_func(log)
