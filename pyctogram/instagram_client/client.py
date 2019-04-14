@@ -39,7 +39,7 @@ def repeat_when_429(*args):
 
 
 class InstagramClient:
-    def __init__(self, username, password, proxies=None, log_func=None):
+    def __init__(self, username, password, proxies=None, login_cookies=None, log_func=None):
         self.username = username
         self.password = password
         self.uuid = self.generate_uuid()
@@ -47,6 +47,7 @@ class InstagramClient:
         self.headers = self.get_headers()
         self.session = session.LoggedSession(log_func=log_func)
         self.session.proxies = proxies or {}
+        self.login_cookies = login_cookies
         self.user_id = None
         self.rank_token = None
         self.csrftoken = None
@@ -103,8 +104,9 @@ class InstagramClient:
             return json_response
 
     def login(self):
-        self.session.get(urls.FETCH_URL, verify=options.SSL_VERIFY, headers=self.headers,
-                         params=dict(challenge_type='signup', guid=self.generate_uuid(split=True)))
+        fetch_response = self.session.get(urls.FETCH_URL, verify=options.SSL_VERIFY, headers=self.headers,
+                                          params=dict(challenge_type='signup', guid=self.generate_uuid(split=True)))
+        self.get_json(fetch_response)
         data = json.dumps({
             'device_id': self.device_id,
             'guid': self.uuid,
@@ -116,6 +118,7 @@ class InstagramClient:
         response = self.session.post(urls.LOGIN_URL,
                                      data=self.generate_signature(data),
                                      headers=self.headers,
+                                     cookies=self.login_cookies,
                                      verify=options.SSL_VERIFY)
         json_response = self.get_json(response)
 
