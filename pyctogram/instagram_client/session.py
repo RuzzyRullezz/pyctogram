@@ -8,9 +8,10 @@ from .logger import RequestLog
 
 
 class LoggedSession(requests.Session):
-    def __init__(self, log_func=None):
+    def __init__(self, log_func=None, timeout=120):
         super().__init__()
         self.log_func = log_func
+        self.timeout = timeout
 
     def request(self, method, url,
                 params=None, data=None, headers=None, cookies=None, files=None,
@@ -43,7 +44,7 @@ class LoggedSession(requests.Session):
             )
 
             send_kwargs = {
-                'timeout': timeout,
+                'timeout': timeout or self.timeout,
                 'allow_redirects': allow_redirects,
             }
             send_kwargs.update(settings)
