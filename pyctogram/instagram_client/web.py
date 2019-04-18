@@ -112,3 +112,39 @@ def session_logout(session):
     if response.status_code != 200:
         raise InstagramNot2XX(response.text, response.status_code)
 
+
+def username_is_ok(username):
+    headers = {
+        'cookie': 'ig_cb=1; rur=FTW; mid=XLjUvgAEAAHuzKrXW84YSw5E5n5B; csrftoken=KpvfzubGlN8OUS2XvnhDDsztQetreXcq',
+        'origin': 'https://www.instagram.com',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
+        'x-requested-with': 'XMLHttpRequest',
+        'x-csrftoken': 'KpvfzubGlN8OUS2XvnhDDsztQetreXcq',
+        'x-ig-app-id': '936619743392459',
+        'x-instagram-ajax': '3ecfbff24fce',
+        'content-type': 'application/x-www-form-urlencoded',
+        'accept': '*/*',
+        'referer': 'https://www.instagram.com/',
+        'authority': 'www.instagram.com',
+    }
+    data = {
+        'email': '',
+        'password': '',
+        'username': username,
+        'first_name': '',
+        'opt_into_one_tap': 'false'
+    }
+    errors = requests.post(
+        'https://www.instagram.com/accounts/web_create_ajax/attempt/', headers=headers, data=data
+    ).json()['errors']
+    username_error = errors.get('username')
+    if username_error:
+        return False
+    else:
+        return True
+
+
+
+
