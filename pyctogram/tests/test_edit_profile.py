@@ -13,5 +13,5 @@ if __name__ == '__main__':
         biography=None,
         phone_number='+79996391601'
     )
-
+    insta_client.change_profile_picture(os.path.join(os.path.dirname(__file__), 'data', 'example.jpg'))
 

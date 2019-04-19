@@ -485,13 +485,14 @@ class InstagramClient:
             '_uid': self.user_id,
             '_csrftoken': self.csrftoken,
         })
+
         bodies = [
             {'type': 'form-data',
              'name': 'ig_sig_key_version',
              'data': constants.SIG_KEY_VERSION},
             {'type': 'form-data',
              'name': 'signed_body',
-             'data': hmac.new(constants.IG_SIG_KEY, msg=udata, digestmod=hashlib.sha256).hexdigest() + udata},
+             'data': self.generate_signature(udata) + udata},
             {'type': 'form-data',
              'name': 'profile_pic',
              'data': photo_binary,
