@@ -6,12 +6,13 @@ if __name__ == '__main__':
     insta_client.login()
     insta_client.edit_profile(
         "sova_megamozg",
-        "sova_anisimus@ruzzy.pro",
+        "sova_julian@ruzzy.pro",
         1,
         first_name=None,
         external_url=None,
         biography=None,
-        phone_number='+79996391601'
+        phone_number='+4917694965721'
     )
-    insta_client.change_profile_picture(os.path.join(os.path.dirname(__file__), 'data', 'example.jpg'))
+    insta_client.send_sms_code('+4917694965721')
+
 

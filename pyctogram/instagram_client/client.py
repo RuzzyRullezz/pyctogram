@@ -808,3 +808,76 @@ class InstagramClient:
                 yield web.get_user_info(user['text'])
             if cursor is None:
                 break
+
+    def check_username(self, username):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'username': username
+        })
+        response = self.session.post(urls.CHECK_USERNAME_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        return json_response['available']
+
+    def change_password(self, new_password):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'old_password': self.password,
+            'new_password1': new_password,
+            'new_password2': new_password,
+        })
+        response = self.session.post(urls.CHANGE_PASSWORD_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        assert json_response['status'] == 'ok'
+        self.password = new_password
+
+    def send_confirm_email(self):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'send_source': 'edit_profile'
+        })
+        response = self.session.post(urls.SEND_CONFIRM_EMAIL_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        self.get_json(response)
+
+    def send_sms_code(self, phone):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'phone_number': phone,
+        })
+        response = self.session.post(urls.SEND_SMS_CODE_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
+        assert json_response['status'] == 'ok'
+
+
+    def verify_sms_code(self, phone, code):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'phone_number': phone,
+            'verification_code': code,
+        })
+        response = self.session.post(urls.VERIFY_SMS_CODE_URL,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        json_response = self.get_json(response)
