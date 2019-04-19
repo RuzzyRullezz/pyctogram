@@ -519,23 +519,23 @@ class InstagramClient:
         json_response = self.get_json(response)
         return json_response
 
-    def edit_profile(self, username=None, email=None, full_name=None,
-                     biography=None, external_url=None, phone_number=None, gender=None):
+    def edit_profile(self, username, email, gender, first_name=None,
+                     biography=None, external_url=None, phone_number=None):
         request = {
             '_uuid': self.uuid,
             '_uid': self.user_id,
             '_csrftoken': self.csrftoken,
+            'device_id': self.device_id,
         }
-        args, _, _, defaults = inspect.getargspec(self.edit_profile)
-        if defaults:
-            params = args[-len(defaults):]
-        else:
-            params = []
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                request.update({param: value})
-
+        request.update({
+            'username': username,
+            'first_name': first_name,
+            'email': email,
+            'biography': biography,
+            'external_url': external_url,
+            'gender': gender,
+            'phone_number': phone_number,
+        })
         data = json.dumps(request)
         response = self.session.post(urls.EDIT_PROF_URL,
                                      data=self.generate_signature(data),
