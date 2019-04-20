@@ -864,9 +864,7 @@ class InstagramClient:
                                      data=self.generate_signature(data),
                                      headers=self.headers,
                                      verify=options.SSL_VERIFY)
-        json_response = self.get_json(response)
-        assert json_response['status'] == 'ok'
-
+        self.get_json(response)
 
     def verify_sms_code(self, phone, code):
         data = json.dumps({
@@ -880,4 +878,4 @@ class InstagramClient:
                                      data=self.generate_signature(data),
                                      headers=self.headers,
                                      verify=options.SSL_VERIFY)
-        json_response = self.get_json(response)
+        self.get_json(response)
