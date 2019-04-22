@@ -40,5 +40,13 @@ class InstagramFailer(InstagramException):
     pass
 
 
+class InstagramUserRestricred(InstagramNot2XX):
+    user_restricted_msg = 'user restricted'
+
+
+class InstagramSpamDetected(InstagramNot2XX):
+    feedback_required_message = 'feedback_required'
+
+
 class VideoTooShort(RuntimeError):
     pass
