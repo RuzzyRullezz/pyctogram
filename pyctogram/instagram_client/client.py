@@ -749,14 +749,14 @@ class InstagramClient:
             if max_id is None:
                 break
 
-    def edit_media(self, media_id, user_id, position=None, caption=''):
+    def edit_media(self, media_id, user_id=None, position=None, caption=''):
         main_data = {
             '_uuid': self.uuid,
             '_uid': self.user_id,
             '_csrftoken': self.csrftoken,
             'caption_text': caption,
         }
-        if position:
+        if user_id and position:
             main_data.update({
                 'usertags': json.dumps({
                     'removed': [],
@@ -775,7 +775,7 @@ class InstagramClient:
         return json_response
 
     def tag_user(self, media_id, user_id, position, caption=''):
-        return self.edit_media(media_id, user_id, position=position, caption=caption)
+        return self.edit_media(media_id, user_id=user_id, position=position, caption=caption)
 
     def get_pending_friendships(self, max_id=None):
         url = urls.PENDING_FRIENDSHIPS_URL
