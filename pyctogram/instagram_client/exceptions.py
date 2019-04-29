@@ -40,12 +40,24 @@ class InstagramFailer(InstagramException):
     pass
 
 
+class InstagramDidntChangeTheStatus(InstagramException):
+    pass
+
+
 class InstagramUserRestricred(InstagramNot2XX):
     user_restricted_msg = 'user restricted'
 
 
 class InstagramSpamDetected(InstagramNot2XX):
     feedback_required_message = 'feedback_required'
+
+
+class InsragramCheckpointRequired(InstagramNot2XX):
+    checkpoint_required_message = 'checkpoint_required'
+
+    def __init__(self, msg, status_code, checkpoint_url):
+        super().__init__(msg, status_code)
+        self.checkpoint_required_message = checkpoint_url
 
 
 class VideoTooShort(RuntimeError):

@@ -97,6 +97,8 @@ class InstagramClient:
                     raise InstagramUserRestricred(response.text, response.status_code)
                 if json_response.get('message') == InstagramSpamDetected.feedback_required_message and json_response.get('spam'):
                     raise InstagramSpamDetected(response.text, response.status_code)
+                if json_response.get('message') == InsragramCheckpointRequired.checkpoint_required_message and json_response.get('checkpoint_url'):
+                    raise InsragramCheckpointRequired(response.text, response.status_code, checkpoint_url=json_response.get('checkpoint_url'))
             except ValueError:
                 pass
             raise InstagramNot2XX(response.text, response.status_code)
@@ -570,12 +572,18 @@ class InstagramClient:
         action = actions.CREATE
         response = self.friendships(action, user_id)
         json_response = self.get_json(response)
+        friendship_status = json_response['friendship_status']
+        if not friendship_status['following'] and not friendship_status['outgoing_request']:
+            raise InstagramDidntChangeTheStatus("Ig didn't change the friendship status after following")
         return json_response
 
     def unfollow(self, user_id):
         action = actions.DESTROY
         response = self.friendships(action, user_id)
         json_response = self.get_json(response)
+        friendship_status = json_response['friendship_status']
+        if friendship_status['following'] or friendship_status['outgoing_request']:
+            raise InstagramDidntChangeTheStatus("Ig didn't change the friendship status after unfollwong")
         return json_response
 
     def like(self, media_id):
