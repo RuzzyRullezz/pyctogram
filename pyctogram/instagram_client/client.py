@@ -1,5 +1,4 @@
 # coding: utf-8
-import inspect
 import os
 import random
 import hashlib
@@ -8,7 +7,7 @@ import time
 import hmac
 import urllib.parse
 import json
-import functools
+import urllib
 import collections
 import datetime
 
@@ -25,25 +24,13 @@ from . import web
 from .exceptions import *
 
 
-def repeat_when_429(*args):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except args:
-                time.sleep(1)
-                return wrapper(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
 class InstagramClient:
     def __init__(self, username, password, proxies=None, login_cookies=None, log_func=None):
         self.username = username
         self.password = password
         self.uuid = self.generate_uuid()
         self.device_id = self.generate_device_id(hashlib.md5((self.username + self.password).encode(options.DEFAULT_ENCODING)).hexdigest())
+        self.phone_id = self.generate_phone_id()
         self.headers = self.get_headers()
         self.session = session.LoggedSession(log_func=log_func)
         self.session.proxies = proxies or {}
@@ -74,6 +61,9 @@ class InstagramClient:
     def generate_device_id(seed):
         volatile_seed = str(int(time.time()))
         return 'android-' + hashlib.md5((seed + volatile_seed).encode(options.DEFAULT_ENCODING)).hexdigest()[:16]
+
+    def generate_phone_id(self):
+        return self.generate_uuid(split=False)
 
     @staticmethod
     def get_headers():
@@ -120,7 +110,7 @@ class InstagramClient:
         data = json.dumps({
             'device_id': self.device_id,
             'guid': self.uuid,
-            'phone_id': self.generate_uuid(split=False),
+            'phone_id': self.phone_id,
             'username': self.username,
             'password': self.password,
             'login_attempt_count': 0
@@ -901,3 +891,21 @@ class InstagramClient:
                                      headers=self.headers,
                                      verify=options.SSL_VERIFY)
         self.get_json(response)
+
+    def register_push(self, token):
+        data = urllib.parse.urlencode({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'guid': self.uuid,
+            'phone_id': self.phone_id,
+            'device_token': token,
+            'device_type': 'android_mqtt',
+            'is_main_push_channel': True,
+            'users': self.user_id,
+        })
+        response = self.session.post(urls.PUSH_REGISTER,
+                                     data=data,
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        return self.get_json(response)
