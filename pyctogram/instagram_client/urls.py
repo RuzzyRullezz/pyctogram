@@ -64,6 +64,6 @@ EXPLORE_URL = f'{API_URL_V1_B}/discover/explore/'
 QP_FETCH_URL = f'{API_URL_V1}/qp/batch_fetch/'
 FB_OTA_URL = f'{API_URL_V1_B}/facebook_ota/'
 
-MEDIA_SEEN_URL = f'{API_URL_V1}/media/seen/?reel=1&live_vod=0'
+MEDIA_SEEN_URL = f'{API_URL_V2}/media/seen/?reel=1&live_vod=0'
 
 
