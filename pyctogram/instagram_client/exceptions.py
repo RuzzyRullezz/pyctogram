@@ -52,7 +52,7 @@ class InstagramSpamDetected(InstagramNot2XX):
     feedback_required_message = 'feedback_required'
 
 
-class InsragramCheckpointRequired(InstagramNot2XX):
+class InstagramCheckpointRequired(InstagramNot2XX):
     checkpoint_required_message = 'checkpoint_required'
 
     def __init__(self, msg, status_code, checkpoint_url):

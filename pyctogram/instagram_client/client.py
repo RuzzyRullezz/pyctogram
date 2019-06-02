@@ -91,8 +91,8 @@ class InstagramClient:
                     raise InstagramUserRestricred(response.text, response.status_code)
                 if json_response.get('message') == InstagramSpamDetected.feedback_required_message and json_response.get('spam'):
                     raise InstagramSpamDetected(response.text, response.status_code)
-                if json_response.get('message') == InsragramCheckpointRequired.checkpoint_required_message and json_response.get('checkpoint_url'):
-                    raise InsragramCheckpointRequired(response.text, response.status_code, checkpoint_url=json_response.get('checkpoint_url'))
+                if json_response.get('message') == InstagramCheckpointRequired.checkpoint_required_message and json_response.get('checkpoint_url'):
+                    raise InstagramCheckpointRequired(response.text, response.status_code, checkpoint_url=json_response.get('checkpoint_url'))
                 if json_response.get('message') == InstagramChallengeRequired.challenge_required_message and json_response.get('challenge'):
                     raise InstagramChallengeRequired(response.text, response.status_code, challenge_url=json_response.get('challenge').get('url'))
                 if json_response.get('message') == InstagramAccountHasBeenDisabled.inactive_user_message:
