@@ -68,5 +68,22 @@ class InstagramChallengeRequired(InstagramNot2XX):
         self.challenge_url = challenge_url
 
 
+class InstagramLoginRequired(InstagramNot2XX):
+    login_required_message = 'login_required'
+
+
+class InstagramAccountHasBeenDisabled(InstagramNot2XX):
+    inactive_user_message = 'Your account has been disabled for violating our terms. ' \
+                            'Learn how you may be able to restore your account.'
+
+
+class InstagramInvalidTargerUser(InstagramNot2XX):
+    invalid_target_user_message = 'Invalid target user.'
+
+
+class InstagramConsentRequired(InstagramNot2XX):
+    consent_required_message = 'consent_required'
+
+
 class VideoTooShort(RuntimeError):
     pass

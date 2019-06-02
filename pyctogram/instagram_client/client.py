@@ -95,6 +95,14 @@ class InstagramClient:
                     raise InsragramCheckpointRequired(response.text, response.status_code, checkpoint_url=json_response.get('checkpoint_url'))
                 if json_response.get('message') == InstagramChallengeRequired.challenge_required_message and json_response.get('challenge'):
                     raise InstagramChallengeRequired(response.text, response.status_code, challenge_url=json_response.get('challenge').get('url'))
+                if json_response.get('message') == InstagramAccountHasBeenDisabled.inactive_user_message:
+                    raise InstagramAccountHasBeenDisabled(response.text, response.status_code)
+                if json_response.get('message') == InstagramLoginRequired.login_required_message:
+                    raise InstagramLoginRequired(response.text, response.status_code)
+                if json_response.get('message') == InstagramInvalidTargerUser.invalid_target_user_message:
+                    raise InstagramInvalidTargerUser(response.text, response.status_code)
+                if json_response.get('message') == InstagramConsentRequired.consent_required_message:
+                    raise InstagramConsentRequired(response.text, response.status_code)
             except ValueError:
                 pass
             raise InstagramNot2XX(response.text, response.status_code)
