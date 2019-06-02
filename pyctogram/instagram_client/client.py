@@ -93,6 +93,8 @@ class InstagramClient:
                     raise InstagramSpamDetected(response.text, response.status_code)
                 if json_response.get('message') == InsragramCheckpointRequired.checkpoint_required_message and json_response.get('checkpoint_url'):
                     raise InsragramCheckpointRequired(response.text, response.status_code, checkpoint_url=json_response.get('checkpoint_url'))
+                if json_response.get('message') == InstagramChallengeRequired.challenge_required_message and json_response.get('challenge'):
+                    raise InstagramChallengeRequired(response.text, response.status_code, challenge_url=json_response.get('challenge'))
             except ValueError:
                 pass
             raise InstagramNot2XX(response.text, response.status_code)

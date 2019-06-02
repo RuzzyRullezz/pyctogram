@@ -57,7 +57,15 @@ class InsragramCheckpointRequired(InstagramNot2XX):
 
     def __init__(self, msg, status_code, checkpoint_url):
         super().__init__(msg, status_code)
-        self.checkpoint_required_message = checkpoint_url
+        self.checkpoint_url = checkpoint_url
+
+
+class InstagramChallengeRequired(InstagramNot2XX):
+    challenge_required_message = 'challenge_required'
+
+    def __init__(self, msg, status_code, challenge_url):
+        super().__init__(msg, status_code)
+        self.challenge_url = challenge_url
 
 
 class VideoTooShort(RuntimeError):
