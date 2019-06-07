@@ -85,5 +85,13 @@ class InstagramConsentRequired(InstagramNot2XX):
     consent_required_message = 'consent_required'
 
 
+class InstagramNotAuthorizedToView(InstagramNot2XX):
+    not_authorized_to_view_message = 'Not authorized to view user'
+
+
+class InstagramCannotLikeMedia(InstagramNot2XX):
+    cannot_like_media = 'Sorry, you cannot like this media'
+
+
 class VideoTooShort(RuntimeError):
     pass

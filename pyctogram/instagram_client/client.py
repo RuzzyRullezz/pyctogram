@@ -103,6 +103,10 @@ class InstagramClient:
                     raise InstagramInvalidTargerUser(response.text, response.status_code)
                 if json_response.get('message') == InstagramConsentRequired.consent_required_message:
                     raise InstagramConsentRequired(response.text, response.status_code)
+                if json_response.get('message') == InstagramNotAuthorizedToView.not_authorized_to_view_message:
+                    raise InstagramNotAuthorizedToView(response.text, response.status_code)
+                if json_response.get('message') == InstagramCannotLikeMedia.cannot_like_media:
+                    raise InstagramCannotLikeMedia(response.text, response.status_code)
             except ValueError:
                 pass
             raise InstagramNot2XX(response.text, response.status_code)
