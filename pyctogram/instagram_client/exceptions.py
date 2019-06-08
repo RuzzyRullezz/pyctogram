@@ -80,10 +80,6 @@ class InstagramCheckpointRequired(InstagramNot2XX):
 class InstagramChallengeRequired(InstagramNot2XX):
     error_message = 'challenge_required'
 
-    def __init__(self, msg, status_code, challenge_url):
-        super().__init__(msg, status_code)
-        self.challenge_url = challenge_url
-
 
 @InstagramNot2XX.register
 class InstagramLoginRequired(InstagramNot2XX):
