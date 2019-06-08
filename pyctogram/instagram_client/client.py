@@ -1074,16 +1074,12 @@ class InstagramClient:
                 break
 
     def get_last_media_id(self, user_id):
-        while True:
-            try:
-                try:
-                    last_feed = next(self.get_user_feed(user_id))
-                except StopIteration:
-                    return None
-                else:
-                    return last_feed
-            except InstagramNot2XX:
-                pass
+        try:
+            last_feed = next(self.get_user_feed(user_id))
+        except StopIteration:
+            return None
+        else:
+            return last_feed
 
     def media_info(self, media_id):
         data = json.dumps({
