@@ -85,6 +85,8 @@ class InstagramClient:
         if response is None:
             raise InstagramNoneResponse("Response is None")
         if not 200 <= response.status_code <= 299:
+            if response.status_code == 404:
+                raise Instagram404(response.text, response.status_code)
             if 500 <= response.status_code <= 599:
                 raise Instagram5XX(response.text, response.status_code)
             try:
