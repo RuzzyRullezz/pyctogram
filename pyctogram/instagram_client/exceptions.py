@@ -93,5 +93,9 @@ class InstagramCannotLikeMedia(InstagramNot2XX):
     cannot_like_media = 'Sorry, you cannot like this media'
 
 
+class Instagram5XX(InstagramNot2XX):
+    pass
+
+
 class VideoTooShort(RuntimeError):
     pass

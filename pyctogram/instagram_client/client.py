@@ -85,6 +85,8 @@ class InstagramClient:
         if response is None:
             raise InstagramNoneResponse("Response is None")
         if not 200 <= response.status_code <= 299:
+            if 500 <= response.status_code <= 599:
+                raise Instagram5XX(response.text, response.status_code)
             try:
                 json_response = response.json()
                 if json_response.get('message') == InstagramUserRestricred.user_restricted_msg:
