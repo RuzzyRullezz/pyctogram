@@ -93,6 +93,10 @@ class InstagramCannotLikeMedia(InstagramNot2XX):
     cannot_like_media = 'Sorry, you cannot like this media'
 
 
+class InstagramRequestTimeout(InstagramNot2XX):
+    pass
+
+
 class Instagram404(InstagramNot2XX):
     pass
 

@@ -89,6 +89,8 @@ class InstagramClient:
                 raise Instagram404(response.text, response.status_code)
             if 500 <= response.status_code <= 599:
                 raise Instagram5XX(response.text, response.status_code)
+            if response.status_code == 408:
+                raise InstagramRequestTimeout(response.text, response.status_code)
             try:
                 json_response = response.json()
                 if json_response.get('message') == InstagramUserRestricred.user_restricted_msg:
