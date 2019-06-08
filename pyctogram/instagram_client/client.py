@@ -93,28 +93,13 @@ class InstagramClient:
                 raise InstagramRequestTimeout(response.text, response.status_code)
             try:
                 json_response = response.json()
-                if json_response.get('message') == InstagramUserRestricred.user_restricted_msg:
-                    raise InstagramUserRestricred(response.text, response.status_code)
-                if json_response.get('message') == InstagramSpamDetected.feedback_required_message and json_response.get('spam'):
-                    raise InstagramSpamDetected(response.text, response.status_code)
-                if json_response.get('message') == InstagramCheckpointRequired.checkpoint_required_message and json_response.get('checkpoint_url'):
-                    raise InstagramCheckpointRequired(response.text, response.status_code, checkpoint_url=json_response.get('checkpoint_url'))
-                if json_response.get('message') == InstagramChallengeRequired.challenge_required_message and json_response.get('challenge'):
-                    raise InstagramChallengeRequired(response.text, response.status_code, challenge_url=json_response.get('challenge').get('url'))
-                if json_response.get('message') == InstagramAccountHasBeenDisabled.inactive_user_message:
-                    raise InstagramAccountHasBeenDisabled(response.text, response.status_code)
-                if json_response.get('message') == InstagramLoginRequired.login_required_message:
-                    raise InstagramLoginRequired(response.text, response.status_code)
-                if json_response.get('message') == InstagramInvalidTargerUser.invalid_target_user_message:
-                    raise InstagramInvalidTargerUser(response.text, response.status_code)
-                if json_response.get('message') == InstagramConsentRequired.consent_required_message:
-                    raise InstagramConsentRequired(response.text, response.status_code)
-                if json_response.get('message') == InstagramNotAuthorizedToView.not_authorized_to_view_message:
-                    raise InstagramNotAuthorizedToView(response.text, response.status_code)
-                if json_response.get('message') == InstagramCannotLikeMedia.cannot_like_media:
-                    raise InstagramCannotLikeMedia(response.text, response.status_code)
             except ValueError:
                 pass
+            else:
+                er_msg = json_response.get('message')
+                special_exception_cls = InstagramNot2XX.get_special_exception(er_msg)
+                if special_exception_cls:
+                    raise special_exception_cls(response.text, response.status_code)
             raise InstagramNot2XX(response.text, response.status_code)
         try:
             json_response = response.json()

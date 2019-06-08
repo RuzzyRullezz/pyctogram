@@ -13,15 +13,6 @@ class InstagramNoneResponse(InstagramException):
     pass
 
 
-class InstagramNot2XX(InstagramException):
-    def __init__(self, msg, status_code):
-        super().__init__(msg)
-        self.status_code = status_code
-
-    def __repr__(self):
-        return str(f'{self.msg} (status = {self.status_code}')
-
-
 class InstagramWrongJsonStruct(InstagramException):
     def __init__(self):
         super().__init__('wrong json structure')
@@ -44,53 +35,85 @@ class InstagramDidntChangeTheStatus(InstagramException):
     pass
 
 
+class InstagramNot2XX(InstagramException):
+    error_message = None
+    special_exception_cls_list = []
+
+    def __init__(self, msg, status_code):
+        super().__init__(msg)
+        self.status_code = status_code
+
+    def __repr__(self):
+        return str(f'{self.msg} (status = {self.status_code}')
+
+    @classmethod
+    def register(cls, exception_class):
+        if not hasattr(exception_class, 'error_message') or getattr(exception_class, 'error_message') is None:
+            raise Exception("Define 'error_message' field in special exception class.")
+        cls.special_exception_cls_list.append(exception_class)
+        return exception_class
+
+    @classmethod
+    def get_special_exception(cls, message):
+        for se in cls.special_exception_cls_list:
+            if message == se.error_message:
+                return se
+        return None
+
+
+@InstagramNot2XX.register
 class InstagramUserRestricred(InstagramNot2XX):
-    user_restricted_msg = 'user restricted'
+    error_message = 'user restricted'
 
 
+@InstagramNot2XX.register
 class InstagramSpamDetected(InstagramNot2XX):
-    feedback_required_message = 'feedback_required'
+    error_message = 'feedback_required'
 
 
+@InstagramNot2XX.register
 class InstagramCheckpointRequired(InstagramNot2XX):
-    checkpoint_required_message = 'checkpoint_required'
-
-    def __init__(self, msg, status_code, checkpoint_url):
-        super().__init__(msg, status_code)
-        self.checkpoint_url = checkpoint_url
+    error_message = 'checkpoint_required'
 
 
+@InstagramNot2XX.register
 class InstagramChallengeRequired(InstagramNot2XX):
-    challenge_required_message = 'challenge_required'
+    error_message = 'challenge_required'
 
     def __init__(self, msg, status_code, challenge_url):
         super().__init__(msg, status_code)
         self.challenge_url = challenge_url
 
 
+@InstagramNot2XX.register
 class InstagramLoginRequired(InstagramNot2XX):
-    login_required_message = 'login_required'
+    error_message = 'login_required'
 
 
+@InstagramNot2XX.register
 class InstagramAccountHasBeenDisabled(InstagramNot2XX):
-    inactive_user_message = 'Your account has been disabled for violating our terms. ' \
-                            'Learn how you may be able to restore your account.'
+    error_message = 'Your account has been disabled for violating our terms. ' \
+                    'Learn how you may be able to restore your account.'
 
 
+@InstagramNot2XX.register
 class InstagramInvalidTargerUser(InstagramNot2XX):
-    invalid_target_user_message = 'Invalid target user.'
+    error_message = 'Invalid target user.'
 
 
+@InstagramNot2XX.register
 class InstagramConsentRequired(InstagramNot2XX):
-    consent_required_message = 'consent_required'
+    error_message = 'consent_required'
 
 
+@InstagramNot2XX.register
 class InstagramNotAuthorizedToView(InstagramNot2XX):
-    not_authorized_to_view_message = 'Not authorized to view user'
+    error_message = 'Not authorized to view user'
 
 
+@InstagramNot2XX.register
 class InstagramCannotLikeMedia(InstagramNot2XX):
-    cannot_like_media = 'Sorry, you cannot like this media'
+    error_message = 'Sorry, you cannot like this media'
 
 
 class InstagramRequestTimeout(InstagramNot2XX):
