@@ -56,7 +56,7 @@ class InstagramNot2XX(InstagramException):
     @classmethod
     def get_special_exception(cls, message):
         for se in cls.special_exception_cls_list:
-            if message == se.error_message:
+            if se.error_message in message:
                 return se
         return None
 
