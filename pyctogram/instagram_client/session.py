@@ -8,10 +8,12 @@ from .logger import RequestLog
 
 
 class LoggedSession(requests.Session):
-    def __init__(self, log_func=None, timeout=120):
+    default_timeout = 120
+
+    def __init__(self, log_func=None, timeout=None):
         super().__init__()
         self.log_func = log_func
-        self.timeout = timeout
+        self.timeout = timeout or self.default_timeout
 
     def request(self, method, url,
                 params=None, data=None, headers=None, cookies=None, files=None,
@@ -58,5 +60,5 @@ class LoggedSession(requests.Session):
             log.error = traceback.format_exc()
             raise
         finally:
-            if self.log_func and callable(self.log_func):
+            if getattr(self, 'log_func', None) and callable(self.log_func):
                 self.log_func(log)

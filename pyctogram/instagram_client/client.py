@@ -10,6 +10,7 @@ import json
 import urllib
 import collections
 import datetime
+import pickle
 
 import requests
 import requests.exceptions
@@ -21,13 +22,24 @@ from . import urls
 from . import friendship_actions as actions
 from . import session
 from . import web
-from .exceptions import *
+from . exceptions import *
 
 
 class InstagramClient:
-    def __init__(self, username, password, proxies=None, login_cookies=None, log_func=None):
+    def __init__(self, username, password, proxies=None, login_cookies=None, log_func=None, session_file=None):
         self.username = username
         self.password = password
+        self.restored = False
+        self.session_file = session_file
+        if session_file and os.path.isfile(session_file):
+            restored_client = self.restore_client(session_file)
+            if restored_client.username != self.username or restored_client.password != self.password:
+                raise RuntimeError("Client credentials doesn't match")
+            self.__dict__.update(restored_client.__dict__)
+            self.restored = True
+            self.session.timeout = session.LoggedSession.default_timeout
+            self.session.log_func = log_func
+            return
         self.logged_in = False
         self.uuid = self.generate_uuid()
         self.device_id = self.generate_device_id(hashlib.md5((self.username + self.password).encode(options.DEFAULT_ENCODING)).hexdigest())
@@ -234,7 +246,6 @@ class InstagramClient:
         self.user_id = logged_in_user['pk']
         self.rank_token = str(self.user_id) + '_' + self.uuid
         self.csrftoken = response.cookies['csrftoken']
-        self.logged_in = True
         return json_response
 
     def sync_user_features(self):
@@ -447,12 +458,22 @@ class InstagramClient:
         self.get_qp_fetch()
         self.get_fb_ota()
 
+    def pickle_data(self):
+        with open(self.session_file, 'wb') as wf:
+            pickle.dump(self, wf)
+
+    @staticmethod
+    def restore_client(pickle_file):
+        with open(pickle_file, "rb") as rf:
+            return pickle.load(rf)
+
     def login_v2(self):
         self.prelogin_v2()
         self.send_login_v2()
         self.postlogin_v2()
+        self.logged_in = True
 
-    def login(self):
+    def login_v1(self):
         fetch_response = self.session.get(urls.FETCH_URL, verify=options.SSL_VERIFY, headers=self.headers,
                                           params=dict(challenge_type='signup', guid=self.generate_uuid(split=True)))
         self.get_json(fetch_response)
@@ -481,10 +502,20 @@ class InstagramClient:
         self.auto_complete_user_list()
         self.timeline_feed()
         self.get_recent_activity()
+        self.logged_in = True
+
+    def login(self):
+        if self.logged_in:
+            return
+        login_method = self.login_v2
+        login_method()
+        if self.session_file:
+            self.pickle_data()
 
     def logout(self):
         response = self.session.get(urls.LOGOUT_URL, headers=self.headers, verify=options.SSL_VERIFY)
-        self.get_json(response)
+        self.logged_in = False
+        return self.get_json(response)
 
     @staticmethod
     def generate_signature(data):
