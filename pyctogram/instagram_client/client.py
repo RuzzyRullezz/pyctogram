@@ -507,7 +507,7 @@ class InstagramClient:
     def login(self):
         if self.logged_in:
             return
-        login_method = self.login_v2
+        login_method = self.login_v1
         login_method()
         if self.session_file:
             self.pickle_data()
