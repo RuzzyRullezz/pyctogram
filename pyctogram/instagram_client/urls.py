@@ -66,4 +66,6 @@ FB_OTA_URL = f'{API_URL_V1_B}/facebook_ota/'
 
 MEDIA_SEEN_URL = f'{API_URL_V2}/media/seen/?reel=1&live_vod=0'
 
+MEDIA_LIKERS_URL = f'{API_URL_V1}/media/%s/likers/'
+MEDIA_COMMENTS_URL = f'{API_URL_V1}/media/%s/comments/'
 

@@ -1348,3 +1348,31 @@ class InstagramClient:
                                     headers=self.headers,
                                     verify=options.SSL_VERIFY)
         return self.get_json(response)
+
+    def get_media_likers(self, media_id):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'media_id': media_id
+        })
+
+        response = self.session.post(urls.MEDIA_LIKERS_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        return self.get_json(response)
+
+    def get_direct_media_comments(self, media_id):
+        data = json.dumps({
+            '_uuid': self.uuid,
+            '_uid': self.user_id,
+            '_csrftoken': self.csrftoken,
+            'media_id': media_id
+        })
+
+        response = self.session.post(urls.MEDIA_COMMENTS_URL % media_id,
+                                     data=self.generate_signature(data),
+                                     headers=self.headers,
+                                     verify=options.SSL_VERIFY)
+        return self.get_json(response)
